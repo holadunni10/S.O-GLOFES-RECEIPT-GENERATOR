@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GLOFES PETROLEUM – Receipt Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --g:#166b2c;--g2:#1f8c3b;--gl:#e3f5e8;
+  --y:#f5c518;--bg:#ecf5ee;--w:#fff;--bd:#c3ddc9;
+  --tx:#151e17;--sh:0 6px 32px rgba(22,107,44,.14);--r:14px;
+  --fh:'Bebas Neue',sans-serif;--fb:'Barlow',sans-serif;--fm:'Share Tech Mono',monospace;
+}
+html{font-size:15px}
+body{
+  font-family:var(--fb);background:var(--bg);
+  background-image:radial-gradient(ellipse at 20% 0%,rgba(22,107,44,.12) 0%,transparent 55%),
+    radial-gradient(ellipse at 80% 100%,rgba(245,197,24,.08) 0%,transparent 50%);
+  min-height:100vh;color:var(--tx);
+}
+
+/* TOPBAR */
+.topbar{
+  background:linear-gradient(105deg,var(--g) 55%,var(--g2));
+  border-bottom:4px solid var(--y);
+  padding:14px 24px;display:flex;align-items:center;gap:14px;
+  position:relative;overflow:hidden;
+}
+.topbar::after{content:'';position:absolute;right:-40px;top:-40px;width:180px;height:180px;border-radius:50%;background:rgba(245,197,24,.10);pointer-events:none}
+.tlogo{width:52px;height:52px;border-radius:50%;background:var(--y);display:flex;align-items:center;justify-content:center;font-family:var(--fh);font-size:17px;color:var(--g);flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.22)}
+.tinfo h1{font-family:var(--fh);font-size:21px;letter-spacing:2px;color:var(--y);line-height:1}
+.tinfo p{font-size:10.5px;color:rgba(255,255,255,.65);letter-spacing:1px;margin-top:2px;text-transform:uppercase}
+.tbtns{margin-left:auto;display:flex;gap:9px;z-index:1;flex-wrap:wrap}
+.tb{font-family:var(--fh);font-size:13.5px;letter-spacing:1.5px;border:none;border-radius:8px;padding:8px 17px;cursor:pointer;transition:opacity .2s,transform .1s;white-space:nowrap}
+.tb:hover{opacity:.87;transform:translateY(-1px)}.tb:active{transform:translateY(0)}
+.tb.gen{background:var(--y);color:var(--g)}.tb.prn{background:rgba(255,255,255,.18);color:#fff;border:1.5px solid rgba(255,255,255,.35)}.tb.pdf{background:#e74c3c;color:#fff}
+
+/* LAYOUT */
+.app{display:grid;grid-template-columns:1fr 430px;gap:26px;max-width:1240px;margin:0 auto;padding:26px 18px 60px}
+
+/* CARD */
+.card{background:var(--w);border-radius:var(--r);box-shadow:var(--sh);border:1.5px solid var(--bd);overflow:hidden}
+.card-head{background:var(--g);padding:12px 20px;font-family:var(--fh);font-size:16px;letter-spacing:2px;color:var(--y);border-bottom:3px solid var(--y);display:flex;align-items:center;gap:8px}
+.card-body{padding:20px;display:flex;flex-direction:column;gap:15px}
+
+/* FORM */
+.sec{font-family:var(--fh);font-size:13px;letter-spacing:2px;color:var(--g2);border-bottom:2px solid var(--gl);padding-bottom:4px;margin-top:2px}
+.f{display:flex;flex-direction:column;gap:4px}
+.f label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--g)}
+.f input,.f select,.f textarea{width:100%;border:1.5px solid var(--bd);border-radius:8px;padding:8px 12px;font-family:var(--fb);font-size:13.5px;color:var(--tx);background:#f7fbf8;transition:border .2s,box-shadow .2s,background .2s;outline:none}
+.f input:focus,.f select:focus,.f textarea:focus{border-color:var(--g2);background:#fff;box-shadow:0 0 0 3px rgba(31,140,59,.12)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px}
+
+/* ITEMS TABLE */
+.items-wrap{overflow-x:auto;border-radius:10px;border:1.5px solid var(--bd)}
+table.itbl{width:100%;border-collapse:collapse;min-width:560px}
+table.itbl thead tr{background:var(--g)}
+table.itbl thead th{font-family:var(--fh);font-size:11.5px;letter-spacing:1.5px;color:var(--y);padding:9px 8px;text-align:left;white-space:nowrap}
+table.itbl tbody tr{border-bottom:1px solid #e5f0e7;transition:background .12s}
+table.itbl tbody tr:hover{background:#f4fbf5}
+table.itbl tbody td{padding:6px 7px;vertical-align:middle}
+table.itbl tfoot tr{background:var(--gl)}
+table.itbl tfoot td{padding:7px 9px;font-weight:700;color:var(--g);font-size:12.5px}
+.ti{border:1.5px solid var(--bd);border-radius:7px;padding:6px 9px;font-family:var(--fb);font-size:12.5px;width:100%;background:#f7fbf8;outline:none;color:var(--tx);transition:border .2s,box-shadow .2s}
+.ti:focus{border-color:var(--g2);background:#fff;box-shadow:0 0 0 2px rgba(31,140,59,.12)}
+.ti-sel{min-width:108px}.ti-num{width:85px}
+.ta-amt{font-family:var(--fm);font-size:12.5px;font-weight:700;color:var(--g);white-space:nowrap;padding-right:4px}
+.btn-rm{background:none;border:none;cursor:pointer;color:#c0392b;font-size:17px;padding:3px 7px;border-radius:5px;transition:background .14s}
+.btn-rm:hover{background:#fdecea}
+.btn-add{align-self:flex-start;background:var(--gl);border:1.5px dashed var(--g2);color:var(--g);font-family:var(--fh);font-size:13px;letter-spacing:1.5px;padding:7px 16px;border-radius:8px;cursor:pointer;transition:background .2s,color .2s}
+.btn-add:hover{background:var(--g);color:var(--y)}
+.ftag{display:inline-block;font-family:var(--fh);font-size:11px;letter-spacing:1px;padding:2px 7px;border-radius:4px}
+.ftag.PMS{background:#c0392b;color:#fff}.ftag.AGO{background:#2d2d2d;color:#f5c518}.ftag.GAS{background:#1565c0;color:#fff}.ftag.KERO{background:#5d4037;color:#fff}
+
+/* GEN BTN */
+.btn-gen{width:100%;border:none;border-radius:10px;padding:14px;font-family:var(--fh);font-size:21px;letter-spacing:3px;background:linear-gradient(110deg,var(--g) 40%,var(--g2));color:var(--w);cursor:pointer;box-shadow:0 5px 18px rgba(22,107,44,.28);transition:opacity .2s,transform .1s}
+.btn-gen:hover{opacity:.9;transform:translateY(-1px)}.btn-gen:active{transform:translateY(0)}
+
+/* PREVIEW PANEL */
+.preview-sticky{position:sticky;top:18px}
+.prev-acts{display:flex;gap:8px;margin-bottom:10px}
+.btn-act{flex:1;border:none;border-radius:9px;padding:10px 0;font-family:var(--fh);font-size:14px;letter-spacing:1.5px;cursor:pointer;transition:opacity .2s,transform .1s}
+.btn-act:hover{opacity:.88;transform:translateY(-1px)}
+.btn-act.print{background:var(--g);color:var(--y)}.btn-act.pdf{background:#e74c3c;color:#fff}
+
+#receipt-wrap{background:#fff;border-radius:var(--r);border:1.5px solid var(--bd);overflow:hidden;box-shadow:var(--sh)}
+.r-ph{padding:48px 22px;text-align:center;color:#b0c0b4;font-size:13px;line-height:2}
+.r-ph strong{color:var(--g)}
+
+/* ---- COPY LABEL BAND ---- */
+.copy-band{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  padding:7px 16px;font-family:var(--fh);font-size:13px;letter-spacing:3px;
+}
+.copy-band.cust{background:var(--g);color:var(--y)}
+.copy-band.comp{background:#2d2d2d;color:#f5c518}
+.copy-band svg{width:16px;height:16px;fill:currentColor;flex-shrink:0}
+
+/* ---- CUT LINE ---- */
+.cut-line{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 16px;background:#f5f5f5;
+  border-top:1.5px dashed #bbb;border-bottom:1.5px dashed #bbb;
+}
+.cut-line span{font-size:10px;color:#aaa;font-style:italic;white-space:nowrap;letter-spacing:1px}
+.cut-line hr{flex:1;border:none;border-top:1.5px dashed #ccc}
+.cut-icon{font-size:18px;transform:rotate(-90deg);display:inline-block;color:#999}
+
+/* ---- RECEIPT BODY ---- */
+.receipt{font-family:var(--fb);background:#fff}
+.r-sg{background:var(--g);height:7px}.r-sy{background:var(--y);height:3px}
+.r-head{text-align:center;padding:15px 18px 8px;background:linear-gradient(180deg,#f8fff8 0%,#fff 100%)}
+.r-lr{display:flex;align-items:center;justify-content:center;gap:9px;margin-bottom:3px}
+.r-lc{width:40px;height:40px;border-radius:50%;background:var(--g);display:flex;align-items:center;justify-content:center;color:var(--y);font-family:var(--fh);font-size:13px;flex-shrink:0}
+.r-cn{font-family:var(--fh);font-size:13.5px;color:var(--g);letter-spacing:1.5px;line-height:1.2;text-align:left}
+.r-cs{font-size:9px;color:var(--g2);text-transform:uppercase;letter-spacing:1px}
+.r-tg{font-size:9px;color:#999;font-style:italic;margin-top:2px}
+.r-dv{border:none;border-top:1.5px dashed #cddcd0;margin:8px 14px}
+.r-no{font-family:var(--fm);font-size:11px;color:var(--g2);letter-spacing:2px;text-align:center;background:var(--gl);margin:0 14px 7px;border-radius:6px;padding:4px 0}
+.r-mr{display:flex;justify-content:space-between;padding:0 14px;font-size:10px;color:#777;margin-bottom:2px}
+.r-mr span{font-weight:700;color:var(--tx)}
+.r-tbl{width:100%;border-collapse:collapse}
+.r-tbl thead tr{background:var(--g)}
+.r-tbl thead th{font-family:var(--fh);font-size:9.5px;letter-spacing:1px;color:var(--y);padding:6px 6px;text-align:left}
+.r-tbl thead th:last-child{text-align:right}
+.r-tbl tbody tr{border-bottom:1px solid #ecf4ee}
+.r-tbl tbody tr:nth-child(even){background:#f9fff8}
+.r-tbl tbody td{padding:5px 6px;font-size:10.5px;vertical-align:middle}
+.r-tbl tbody td:last-child{text-align:right;font-weight:700;font-family:var(--fm);font-size:10px}
+.r-tots{padding:6px 14px 0}
+.r-tr{display:flex;justify-content:space-between;font-size:10.5px;color:#666;padding:2px 0}
+.r-tr.grand{font-family:var(--fh);font-size:15px;color:var(--g);border-top:2px solid var(--g);margin-top:5px;padding-top:6px;letter-spacing:1px}
+.r-tr.grand .ga{font-family:var(--fm);font-size:16px}
+.r-pb{margin:10px 14px;border:1.5px solid var(--gl);border-radius:8px;padding:8px 11px;background:#f9fff9;font-size:10px;color:#666}
+.r-pb .pm{font-weight:700;color:var(--g);text-transform:uppercase;letter-spacing:1px}
+.r-at{padding:3px 14px 0;font-size:9.5px;color:#999;display:flex;justify-content:space-between}
+.r-ft{text-align:center;padding:9px 14px 0;font-size:9px;color:#aaa;font-style:italic;line-height:1.9}
+.r-fb{font-family:var(--fh);font-size:12px;color:var(--g);letter-spacing:2px;margin-top:3px}
+
+/* COMPANY COPY – watermark style */
+.comp-watermark{
+  text-align:center;font-family:var(--fh);font-size:9px;letter-spacing:3px;
+  color:#c0392b;border:1.5px solid #e0a0a0;border-radius:6px;
+  margin:6px 14px 0;padding:3px 0;background:#fff5f5;
+}
+/* signature line */
+.sig-row{display:flex;justify-content:space-between;padding:8px 14px 0;font-size:9px;color:#999}
+.sig-line{border-top:1.5px solid #ccc;width:90px;text-align:center;padding-top:2px}
+
+@keyframes pop{from{opacity:0;transform:scale(.97) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.pop{animation:pop .3s ease both}
+
+/* PRINT */
+@media print{
+  body{background:#fff!important;background-image:none!important}
+  .topbar,.app .card,.prev-acts{display:none!important}
+  .app{grid-template-columns:1fr;padding:0;gap:0;max-width:100%}
+  .preview-sticky{position:static}
+  #receipt-wrap{border:none;box-shadow:none;border-radius:0}
+  .cut-line{background:#fff;border-color:#999}
+  .copy-band{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .r-sg,.r-sy,.r-tbl thead,.r-no,.r-pb,.r-lc,.copy-band{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+
+@media(max-width:860px){
+  .app{grid-template-columns:1fr}
+  .preview-sticky{position:static}
+  .tbtns{display:none}
+}
+@media(max-width:480px){.g2,.g3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tlogo">SGP</div>
+  <div class="tinfo">
+    <h1>S.O Glofes Petroleum Co. Nig. Ltd.</h1>
+    <p>Receipt Generator &nbsp;·&nbsp; AGO · PMS · GAS · KEROSINE</p>
+  </div>
+  <div class="tbtns">
+    <button class="tb gen"   onclick="generateReceipt()">⚡ GENERATE</button>
+    <button class="tb prn"   onclick="window.print()">🖨 PRINT BOTH</button>
+    <button class="tb pdf"   onclick="savePDF()">⬇ SAVE PDF</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app">
+
+  <!-- FORM -->
+  <div class="card">
+    <div class="card-head">📋 &nbsp;FILL RECEIPT DETAILS</div>
+    <div class="card-body">
+
+      <div class="sec">🏭 STATION &amp; TRANSACTION</div>
+      <div class="g2">
+        <div class="f"><label>Receipt No.</label><input id="f-rno" type="text" placeholder="e.g. RCP-00123"/></div>
+        <div class="f"><label>Date &amp; Time</label><input id="f-dt" type="datetime-local"/></div>
+      </div>
+      <div class="g2">
+        <div class="f"><label>Station / Branch</label><input id="f-branch" type="text" placeholder="e.g. Main Branch, Abuja"/></div>
+        <div class="f"><label>Pump No.</label><input id="f-pump" type="text" placeholder="e.g. Pump 3A"/></div>
+      </div>
+      <div class="f"><label>Station Address</label><input id="f-addr" type="text" placeholder="e.g. No. 12 Airport Road, Abuja"/></div>
+
+      <div class="sec">👤 CUSTOMER DETAILS</div>
+      <div class="g2">
+        <div class="f"><label>Customer Name <em style="font-style:normal;color:#bbb">(optional)</em></label><input id="f-cust" type="text" placeholder="e.g. Alhaji Musa Bello"/></div>
+        <div class="f"><label>Phone / Vehicle Plate</label><input id="f-ref" type="text" placeholder="e.g. ABJ-234-KJA"/></div>
+      </div>
+
+      <div class="sec">⛽ PRODUCTS / ITEMS</div>
+      <div style="display:flex;flex-direction:column;gap:9px">
+        <div class="items-wrap">
+          <table class="itbl">
+            <thead>
+              <tr>
+                <th>PRODUCT</th>
+                <th>QTY (L/Kg)</th>
+                <th>UNIT PRICE (₦)</th>
+                <th>DISCOUNT (₦)</th>
+                <th>AMOUNT (₦)</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="items-body"></tbody>
+            <tfoot>
+              <tr>
+                <td colspan="4" style="text-align:right;font-family:var(--fh);font-size:14px;letter-spacing:1px">SUBTOTAL</td>
+                <td id="tbl-sub" style="font-family:var(--fm)">₦0.00</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <button class="btn-add" onclick="addRow()">＋ ADD PRODUCT ROW</button>
+      </div>
+
+      <div class="sec">💳 PAYMENT</div>
+      <div class="g3">
+        <div class="f"><label>Payment Method</label>
+          <select id="f-pay">
+            <option>Cash</option><option>POS / Card</option>
+            <option>Bank Transfer</option><option>On Credit</option>
+          </select>
+        </div>
+        <div class="f"><label>Amount Tendered (₦)</label><input id="f-tend" type="number" placeholder="e.g. 15000" min="0" step="0.01"/></div>
+        <div class="f"><label>Overall Discount (₦)</label><input id="f-odisc" type="number" placeholder="0.00" min="0" step="0.01" value="0"/></div>
+      </div>
+
+      <div class="g2">
+        <div class="f"><label>Attendant Name</label><input id="f-att" type="text" placeholder="e.g. Chidi Emmanuel"/></div>
+        <div class="f"><label>Remarks <em style="font-style:normal;color:#bbb">(optional)</em></label><input id="f-rem" type="text" placeholder="e.g. Full tank, card payment…"/></div>
+      </div>
+
+      <button class="btn-gen" onclick="generateReceipt()">⚡ GENERATE RECEIPT</button>
+    </div>
+  </div>
+
+  <!-- PREVIEW -->
+  <div class="preview-sticky">
+    <div class="prev-acts">
+      <button class="btn-act print" onclick="window.print()">🖨 PRINT BOTH COPIES</button>
+      <button class="btn-act pdf"   onclick="savePDF()">⬇ SAVE PDF</button>
+    </div>
+    <div id="receipt-wrap">
+      <div class="r-ph">
+        Fill in the form and press<br>
+        <strong>⚡ GENERATE RECEIPT</strong><br>
+        to preview both copies here.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const PRODS={
+  PMS:{label:'PMS – Premium Motor Spirit',unit:'Ltrs'},
+  AGO:{label:'AGO – Automotive Gas Oil',unit:'Ltrs'},
+  GAS:{label:'GAS – LPG / Cooking Gas',unit:'Kg'},
+  KERO:{label:'KERO – Household Kerosine',unit:'Ltrs'},
+};
+
+const $=id=>document.getElementById(id);
+const nf=n=>Number(n||0).toLocaleString('en-NG',{minimumFractionDigits:2,maximumFractionDigits:2});
+const pad=n=>String(n).padStart(5,'0');
+function genRno(){return 'RCP-'+pad(Math.floor(Math.random()*99999))}
+function nowLocal(){const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,16)}
+function parseDT(raw){
+  if(!raw) return{date:'–',time:''};
+  const d=new Date(raw);
+  return{date:d.toLocaleDateString('en-NG',{year:'numeric',month:'long',day:'numeric'}),time:d.toLocaleTimeString('en-NG',{hour:'2-digit',minute:'2-digit'})};
+}
+
+/* ---- ROWS ---- */
+let uid=0;
+function addRow(prod='PMS',qty='',price='',disc='0'){
+  uid++;const id=uid;
+  const opts=Object.entries(PRODS).map(([k])=>`<option value="${k}"${k===prod?' selected':''}>${k} – ${PRODS[k].unit}</option>`).join('');
+  const tr=document.createElement('tr');
+  tr.id='r-'+id;
+  tr.innerHTML=`
+    <td><select class="ti ti-sel" onchange="recalc(${id})">${opts}</select></td>
+    <td><input class="ti ti-num" type="number" min="0" step="0.01" placeholder="0.00" value="${qty}" oninput="recalc(${id})"/></td>
+    <td><input class="ti ti-num" type="number" min="0" step="0.01" placeholder="0.00" value="${price}" oninput="recalc(${id})"/></td>
+    <td><input class="ti ti-num" type="number" min="0" step="0.01" placeholder="0.00" value="${disc}" oninput="recalc(${id})"/></td>
+    <td class="ta-amt" id="a-${id}">₦0.00</td>
+    <td><button class="btn-rm" onclick="removeRow(${id})" title="Remove">✕</button></td>`;
+  $('items-body').appendChild(tr);
+  recalc(id);updateSub();
+}
+function removeRow(id){const t=$('r-'+id);if(t)t.remove();updateSub()}
+function recalc(id){
+  const tr=$('r-'+id);if(!tr) return 0;
+  const inp=tr.querySelectorAll('input');
+  const amt=Math.max(0,(parseFloat(inp[0].value)||0)*(parseFloat(inp[1].value)||0)-(parseFloat(inp[2].value)||0));
+  $('a-'+id).textContent='₦'+nf(amt);
+  updateSub();return amt;
+}
+function updateSub(){
+  let s=0;
+  document.querySelectorAll('#items-body tr').forEach(tr=>{
+    const id=tr.id.replace('r-','');const inp=tr.querySelectorAll('input');
+    s+=Math.max(0,(parseFloat(inp[0].value)||0)*(parseFloat(inp[1].value)||0)-(parseFloat(inp[2].value)||0));
+  });
+  $('tbl-sub').textContent='₦'+nf(s);return s;
+}
+function getRows(){
+  const rows=[];
+  document.querySelectorAll('#items-body tr').forEach(tr=>{
+    const id=tr.id.replace('r-','');
+    const sel=tr.querySelector('select');const inp=tr.querySelectorAll('input');
+    const prod=sel.value,qty=parseFloat(inp[0].value)||0,prc=parseFloat(inp[1].value)||0,dsc=parseFloat(inp[2].value)||0;
+    rows.push({prod,qty,prc,dsc,amt:Math.max(0,qty*prc-dsc),unit:PRODS[prod].unit});
+  });
+  return rows;
+}
+
+/* ---- RECEIPT HTML BUILDER ---- */
+function buildReceiptHTML(data, copyType){
+  const{rno,date,time,branch,addr,pump,cust,ref,pay,tend,odisc,att,rem,rows,sub,total,chng}=data;
+  const isCust=copyType==='customer';
+  const itemRows=rows.map(r=>`
+    <tr>
+      <td><span class="ftag ${r.prod}">${r.prod}</span></td>
+      <td>${nf(r.qty)} ${r.unit}</td>
+      <td>₦${nf(r.prc)}</td>
+      <td>${r.dsc>0?'–₦'+nf(r.dsc):'–'}</td>
+      <td>₦${nf(r.amt)}</td>
+    </tr>`).join('');
+
+  const companyExtra=isCust?'':`
+    <div class="comp-watermark">★ COMPANY COPY – FOR INTERNAL RECORDS ONLY ★</div>
+    <div class="sig-row">
+      <div class="sig-line">Cashier Signature</div>
+      <div class="sig-line">Manager Approval</div>
+    </div>`;
+
+  return `
+  <div class="receipt">
+    <div class="r-sg"></div><div class="r-sy"></div>
+    <div class="r-head">
+      <div class="r-lr">
+        <div class="r-lc">SGP</div>
+        <div>
+          <div class="r-cn">S.O GLOFES PETROLEUM<br>COMPANY NIG. LTD.</div>
+          <div class="r-cs">${branch}${addr?' · '+addr:''}</div>
+        </div>
+      </div>
+      <div class="r-tg">Your Trusted Fuelling Partner 🌿</div>
+    </div>
+    <div class="r-no">${rno}</div>
+    <div class="r-mr"><div>Date: <span>${date}</span></div><div>Time: <span>${time}</span></div></div>
+    <div class="r-mr"><div>Pump: <span>${pump}</span></div>${cust?`<div>Customer: <span>${cust}</span></div>`:''}</div>
+    ${ref?`<div class="r-mr"><div>Ref / Plate: <span>${ref}</span></div></div>`:''}
+    <hr class="r-dv"/>
+    <table class="r-tbl">
+      <thead><tr><th>PRODUCT</th><th>QTY</th><th>PRICE</th><th>DISC</th><th>AMOUNT</th></tr></thead>
+      <tbody>${itemRows}</tbody>
+    </table>
+    <div class="r-tots">
+      <div class="r-tr"><span>Subtotal</span><span>₦${nf(sub)}</span></div>
+      ${odisc>0?`<div class="r-tr"><span>Overall Discount</span><span style="color:#c0392b">–₦${nf(odisc)}</span></div>`:''}
+      <div class="r-tr grand"><span>TOTAL DUE</span><span class="ga">₦${nf(total)}</span></div>
+    </div>
+    <div class="r-pb">
+      <div>Payment: <span class="pm">${pay}</span></div>
+      ${tend>0?`<div style="margin-top:3px">Tendered: ₦${nf(tend)}</div>`:''}
+      ${tend>0?`<div>Change: <strong style="color:var(--g)">₦${nf(chng<0?0:chng)}</strong></div>`:''}
+    </div>
+    ${rem?`<div style="padding:0 14px 4px;font-size:9.5px;color:#888;font-style:italic">Remarks: ${rem}</div>`:''}
+    <hr class="r-dv"/>
+    <div class="r-at"><span>Attendant: <strong>${att}</strong></span><span>✓ Authorised</span></div>
+    ${companyExtra}
+    <div class="r-ft">
+      ${isCust?'Thank you for choosing GLOFES PETROLEUM!<br>Drive safe &bull; Come again &bull; God bless you':'Issued by S.O GLOFES PETROLEUM CO. NIG. LTD.<br>This copy is for official company records.'}
+      <div class="r-fb">S.O GLOFES PETROLEUM CO. NIG. LTD.</div>
+    </div>
+    <div class="r-sy" style="margin-top:11px"></div>
+    <div class="r-sg"></div>
+  </div>`;
+}
+
+/* ---- GENERATE ---- */
+function generateReceipt(){
+  const rno   =$('f-rno').value.trim()    ||genRno();
+  const dtRaw =$('f-dt').value;
+  const branch=$('f-branch').value.trim() ||'Main Branch';
+  const pump  =$('f-pump').value.trim()   ||'–';
+  const addr  =$('f-addr').value.trim();
+  const cust  =$('f-cust').value.trim();
+  const ref   =$('f-ref').value.trim();
+  const pay   =$('f-pay').value;
+  const tend  =parseFloat($('f-tend').value)||0;
+  const odisc =parseFloat($('f-odisc').value)||0;
+  const att   =$('f-att').value.trim()||'N/A';
+  const rem   =$('f-rem').value.trim();
+  const rows  =getRows();
+  if(!rows.length){alert('Please add at least one product row.');return}
+  const sub  =rows.reduce((s,r)=>s+r.amt,0);
+  const total=Math.max(0,sub-odisc);
+  const chng =tend-total;
+  const{date,time}=parseDT(dtRaw);
+
+  const data={rno,date,time,branch,addr,pump,cust,ref,pay,tend,odisc,att,rem,rows,sub,total,chng};
+
+  $('receipt-wrap').innerHTML=`
+  <div class="pop">
+    <!-- CUSTOMER COPY -->
+    <div class="copy-band cust">
+      <svg viewBox="0 0 24 24"><path d="M20 8h-2.81c-.45-.78-1.07-1.45-1.82-1.96L17 4.41 15.59 3l-2.17 2.17C12.96 5.06 12.49 5 12 5c-.49 0-.96.06-1.41.17L8.41 3 7 4.41l1.62 1.63C7.88 6.55 7.26 7.22 6.81 8H4v2h2.09c-.05.33-.09.66-.09 1v1H4v2h2v1c0 .34.04.67.09 1H4v2h2.81c1.04 1.79 2.97 3 5.19 3s4.15-1.21 5.19-3H20v-2h-2.09c.05-.33.09-.66.09-1v-1h2v-2h-2v-1c0-.34-.04-.67-.09-1H20V8zm-6 8h-4v-2h4v2zm0-4h-4v-2h4v2z"/></svg>
+      ✂ &nbsp; CUSTOMER COPY
+    </div>
+    ${buildReceiptHTML(data,'customer')}
+
+    <!-- CUT LINE -->
+    <div class="cut-line">
+      <hr/><span class="cut-icon">✂</span><span>CUT HERE &nbsp;·&nbsp; DETACH FOR COMPANY RECORDS</span><span class="cut-icon">✂</span><hr/>
+    </div>
+
+    <!-- COMPANY COPY -->
+    <div class="copy-band comp">
+      <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/></svg>
+      🗂 &nbsp; COMPANY COPY — OFFICE RECORD
+    </div>
+    ${buildReceiptHTML(data,'company')}
+  </div>`;
+
+  if(window.innerWidth<860){$('receipt-wrap').scrollIntoView({behavior:'smooth',block:'start'})}
+}
+
+/* ---- PDF ---- */
+function savePDF(){
+  const rno   =$('f-rno').value.trim()    ||genRno();
+  const dtRaw =$('f-dt').value;
+  const branch=$('f-branch').value.trim() ||'Main Branch';
+  const pump  =$('f-pump').value.trim()   ||'–';
+  const addr  =$('f-addr').value.trim();
+  const cust  =$('f-cust').value.trim();
+  const ref   =$('f-ref').value.trim();
+  const pay   =$('f-pay').value;
+  const tend  =parseFloat($('f-tend').value)||0;
+  const odisc =parseFloat($('f-odisc').value)||0;
+  const att   =$('f-att').value.trim()||'N/A';
+  const rem   =$('f-rem').value.trim();
+  const rows  =getRows();
+  if(!rows.length){alert('Please add at least one product row.');return}
+  const sub  =rows.reduce((s,r)=>s+r.amt,0);
+  const total=Math.max(0,sub-odisc);
+  const chng =tend-total;
+  const{date,time}=parseDT(dtRaw);
+  const{jsPDF}=window.jspdf;
+
+  // A4 landscape – two 80mm receipts side by side with margin
+  const PW=210,PH=297;
+  const doc=new jsPDF({unit:'mm',format:'a4',orientation:'portrait'});
+
+  // Draw one receipt column (x offset, copy label, isCompany)
+  function drawReceipt(doc,xOff,copyLabel,isCompany){
+    const W=88; // column width
+    let y=0;
+
+    // Copy label banner
+    if(isCompany){
+      doc.setFillColor(45,45,45);
+    } else {
+      doc.setFillColor(22,107,44);
+    }
+    doc.rect(xOff,y,W,7,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(8);
+    doc.setTextColor(245,197,24);
+    doc.text(copyLabel,xOff+W/2,y+4.8,{align:'center'});
+    y+=7;
+
+    // Top stripe
+    doc.setFillColor(22,107,44);doc.rect(xOff,y,W,3.5,'F');y+=3.5;
+    doc.setFillColor(245,197,24);doc.rect(xOff,y,W,2,'F');y+=2;
+
+    // Header
+    y+=4;
+    doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(22,107,44);
+    doc.text('S.O GLOFES PETROLEUM COMPANY NIG. LTD.',xOff+W/2,y,{align:'center'});y+=4;
+    doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(80,80,80);
+    doc.text(`${branch}${addr?' | '+addr:''}`,xOff+W/2,y,{align:'center'});y+=3.5;
+    doc.setTextColor(150,150,150);
+    doc.text('Your Trusted Fuelling Partner',xOff+W/2,y,{align:'center'});y+=4;
+
+    // Receipt No
+    doc.setFillColor(227,245,232);
+    doc.roundedRect(xOff+3,y-3,W-6,6,1.2,1.2,'F');
+    doc.setFont('courier','bold');doc.setFontSize(8);doc.setTextColor(31,140,59);
+    doc.text(rno,xOff+W/2,y+1,{align:'center'});y+=5;
+
+    // Meta
+    doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(60,60,60);
+    doc.text(`Date: ${date}`,xOff+3,y);doc.text(`Time: ${time}`,xOff+W-3,y,{align:'right'});y+=3.5;
+    doc.text(`Pump: ${pump}`,xOff+3,y);
+    if(cust)doc.text(`Cust: ${cust}`,xOff+W-3,y,{align:'right'});y+=3.5;
+    if(ref){doc.text(`Ref/Plate: ${ref}`,xOff+3,y);y+=3.5;}
+
+    // Dashed divider
+    doc.setDrawColor(190,210,195);doc.setLineDash([1.5,1.5]);
+    doc.line(xOff+3,y,xOff+W-3,y);doc.setLineDash([]);y+=2.5;
+
+    // Items table
+    const tableBody=rows.map(r=>[
+      r.prod,
+      `${nf(r.qty)}${r.unit}`,
+      `N${nf(r.prc)}`,
+      r.dsc>0?`-N${nf(r.dsc)}`:'-',
+      `N${nf(r.amt)}`,
+    ]);
+    doc.autoTable({
+      startY:y,
+      head:[['PRODUCT','QTY','PRICE','DISC','AMOUNT']],
+      body:tableBody,
+      theme:'grid',
+      styles:{font:'helvetica',fontSize:6,cellPadding:1.5,textColor:[20,20,20],lineColor:[210,225,215],lineWidth:0.25},
+      headStyles:{fillColor:[22,107,44],textColor:[245,197,24],fontStyle:'bold',halign:'center'},
+      columnStyles:{
+        0:{cellWidth:14,halign:'center'},
+        1:{cellWidth:17,halign:'right'},
+        2:{cellWidth:17,halign:'right'},
+        3:{cellWidth:14,halign:'right'},
+        4:{cellWidth:17,halign:'right'},
+      },
+      margin:{left:xOff+3,right:PW-(xOff+W-3)},
+      tableWidth:W-6,
+    });
+    y=doc.lastAutoTable.finalY+4;
+
+    // Totals
+    const tline=(lbl,val,bold=false,col=[60,60,60])=>{
+      doc.setFont('helvetica',bold?'bold':'normal');
+      doc.setFontSize(bold?8:6.5);doc.setTextColor(...col);
+      doc.text(lbl,xOff+3,y);doc.text(val,xOff+W-3,y,{align:'right'});y+=bold?4.5:3.5;
+    };
+    tline('Subtotal:',`N${nf(sub)}`);
+    if(odisc>0)tline('Discount:',`-N${nf(odisc)}`,false,[192,57,43]);
+    doc.setDrawColor(22,107,44);doc.setLineWidth(0.5);
+    doc.line(xOff+3,y-1,xOff+W-3,y-1);doc.setLineWidth(0.2);
+    tline('TOTAL DUE:',`N${nf(total)}`,true,[22,107,44]);
+
+    // Payment
+    y+=1;
+    const pbH=tend>0?11:6.5;
+    doc.setFillColor(249,255,249);doc.setDrawColor(195,221,201);
+    doc.roundedRect(xOff+3,y,W-6,pbH,1.2,1.2,'FD');
+    y+=3.5;
+    doc.setFont('helvetica','bold');doc.setFontSize(6.5);doc.setTextColor(22,107,44);
+    doc.text(`Payment: ${pay}`,xOff+5,y);
+    if(tend>0){
+      y+=3.5;doc.setFont('helvetica','normal');doc.setTextColor(60,60,60);
+      doc.text(`Tendered: N${nf(tend)}   Change: N${nf(chng<0?0:chng)}`,xOff+5,y);
+    }
+    y+=5;
+
+    if(rem){
+      doc.setFont('helvetica','italic');doc.setFontSize(6);doc.setTextColor(140,140,140);
+      doc.text(`Remarks: ${rem}`,xOff+3,y);y+=4;
+    }
+
+    // Company-only extras
+    if(isCompany){
+      doc.setFont('helvetica','bold');doc.setFontSize(6);doc.setTextColor(192,57,43);
+      doc.setDrawColor(220,160,160);doc.setFillColor(255,245,245);
+      doc.roundedRect(xOff+3,y,W-6,5,1,1,'FD');
+      doc.text('COMPANY COPY – FOR INTERNAL RECORDS ONLY',xOff+W/2,y+3.2,{align:'center'});
+      y+=8;
+
+      // Signature lines
+      doc.setDrawColor(170,170,170);
+      doc.line(xOff+5,y,xOff+5+30,y);
+      doc.line(xOff+W-5-30,y,xOff+W-5,y);
+      doc.setFont('helvetica','normal');doc.setFontSize(5.5);doc.setTextColor(150,150,150);
+      doc.text('Cashier Signature',xOff+5,y+3);
+      doc.text('Manager Approval',xOff+W-5-30,y+3);
+      y+=9;
+    }
+
+    // Dashed divider
+    doc.setDrawColor(190,210,195);doc.setLineDash([1.5,1.5]);
+    doc.line(xOff+3,y,xOff+W-3,y);doc.setLineDash([]);y+=3;
+
+    // Attendant
+    doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(80,80,80);
+    doc.text(`Attendant: ${att}`,xOff+3,y);
+    doc.text('Authorised',xOff+W-3,y,{align:'right'});y+=4;
+
+    // Footer
+    doc.setFont('helvetica','italic');doc.setFontSize(6);doc.setTextColor(160,160,160);
+    const ftxt=isCompany
+      ?'Issued by S.O GLOFES PETROLEUM CO. NIG. LTD. | Official Company Record'
+      :'Thank you for choosing GLOFES PETROLEUM! Drive safe. God bless you.';
+    doc.text(ftxt,xOff+W/2,y,{align:'center'});y+=3.5;
+    doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(22,107,44);
+    doc.text('S.O GLOFES PETROLEUM CO. NIG. LTD.',xOff+W/2,y,{align:'center'});y+=4;
+
+    // Bottom stripe
+    doc.setFillColor(245,197,24);doc.rect(xOff,y,W,2,'F');y+=2;
+    doc.setFillColor(22,107,44);doc.rect(xOff,y,W,3.5,'F');
+  }
+
+  // Left = Customer Copy, Right = Company Copy
+  const marginX=7;
+  const gapX=10;
+  drawReceipt(doc,marginX,'✂  CUSTOMER COPY',false);
+  // Vertical separator line
+  const sepX=marginX+88+gapX/2;
+  doc.setDrawColor(180,180,180);
+  doc.setLineDash([2,2]);
+  doc.line(sepX,5,sepX,PH-5);
+  doc.setLineDash([]);
+  doc.setFont('helvetica','normal');doc.setFontSize(6);doc.setTextColor(180,180,180);
+  doc.text('CUT',sepX,PH/2,{align:'center',angle:90});
+  drawReceipt(doc,marginX+88+gapX,'🗂  COMPANY COPY — OFFICE RECORD',true);
+
+  const fname=`GLOFES_${rno}_${date.replace(/,?\s+/g,'-')}.pdf`;
+  doc.save(fname);
+}
+
+/* ---- INIT ---- */
+$('f-rno').value=genRno();
+$('f-dt').value=nowLocal();
+addRow('PMS');
+</script>
+</body>
+</html>
